@@ -63,7 +63,7 @@ class Motor():
     # the force is always in the direction of the velocity
     def apply_force(self):
         noise = np.random.normal(0, self.STD)
-        self.force_vector = self.direction*self.FORCE_MAG + noise*self.SQRT_DT,0
+        self.force_vector = self.direction*(self.FORCE_MAG + noise*self.SQRT_DT),0
         self.body.apply_force_at_local_point(self.force_vector, (0, 0))
         
     # collision handler: switches the direction of the applied force 
@@ -79,7 +79,7 @@ class Motor():
         external_impulse = np.abs(impulse - self.force_vector[0]*self.TIME_STEP)
         switch_prob = sigmoid(self.IMP_CENTER, self.IMP_SENS, external_impulse)
         rand_number = np.random.random()
-        if (rand_number < switch_prob or rand_number < self.DIR_PROB):
+        if (rand_number < switch_prob or rand_number < self.DIR_PROB*self.TIME_STEP):
             self.direction = self.direction * (-1)
             
     def step(self):
