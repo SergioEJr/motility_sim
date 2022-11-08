@@ -184,6 +184,7 @@ class Cell:
         self.K = K
         n_motors = int(m_dens*self.LENGTH)
         E_per_motor = self.BUDGET/n_motors
+        # places the sigmoid center at the 
         term_impulse = math.sqrt(2*E_per_motor)
         self.motors = np.asarray(
             [self.make_motor(E_per_motor, m_std, dir_prob,

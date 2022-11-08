@@ -5,18 +5,25 @@ import pickle
 import matplotlib.pyplot as plt
 import time
 
+# returns an uninitialized cell object that inherits parameters
+# from the given parent
 def mutate(pair):
     child = pair[0]
     parent = pair[1]
     child.inherit(parent)
     return child
     
+# runs a cells simulation
 def cell_run(cell):
     cell.run()
     return cell
 
+# a genetic algorithm object with fixed generation size
 class Genetic:
     
+    # gen_size and s are hyperparameters of the genetic algorithm
+    # settings are the hyperparameters of the cells
+    # initial is the initialization point
     def __init__(self, gen_size, s, settings, initial):
         self.gen_size = gen_size
         self.completions = 0
@@ -40,6 +47,7 @@ class Genetic:
         new_pop = np.asarray(pool.map(mutate, zip(children, parents)))
         return new_pop
 
+    # advances the simulation by n epochs
     def parallel_gen_alg(self, n, pool):
         counter = 0
         # if no population, initialize
@@ -68,9 +76,22 @@ class Genetic:
                 print(f"{counter} of {n} (total {self.completions}) finished in {end - start : .2f} seconds...")  
         print("Done!")
 
+    # pickles the simulation object
     def save(self, filename):
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
+
+    # returns a list of the number of numerical errors per generation
+    def count_errors(self):
+        count = 0
+        errors = []
+        for gen in data.full_data:
+            for cell in gen:
+                if cell.ERROR is True:
+                    count += 1
+            errors.append(count/data.gen_size)
+            count = 0
+        return errors
 
     # returns a list of the mean of 'attribute' per generation
     def mean_pgen(self, attribute):
@@ -83,7 +104,12 @@ class Genetic:
                     continue
                 else:
                     n_valid += 1
-                    count += getattr(cell, attribute) 
+                    try:
+                        count += getattr(cell, attribute) 
+                    except:
+                        print(f"'{attribute}' not found, try one of the following")
+                        print(vars(cell))
+                        return -1
             means.append(count/n_valid)
             count = 0
             n_valid = 0
