@@ -5,6 +5,23 @@ import pickle
 import matplotlib.pyplot as plt
 import time
 
+
+# utility methods
+# takes in a population of candidates of size n. Randomly selects n cells
+# weighted by their performance (distance travelled). Return this selection.
+def selection(gen_size, s, pop):
+    factors = [math.exp(s * cell.distance) for cell in pop]
+    weights = np.asarray(factors) / np.sum(factors)
+    indices = np.random.choice(pop.size, gen_size, p=weights)
+    return np.asarray([pop[i] for i in indices])
+
+# Takes in a population of parents, create new cells that inherit parameters from parents
+# with mutations included. 
+def offspring(settings, gen_size, parents, pool):
+    children = np.asarray([sim.Cell(**settings) for _ in range(gen_size)], dtype = 'O')
+    new_pop = np.asarray(pool.map(mutate, zip(children, parents)))
+    return new_pop
+
 # returns an uninitialized cell object that inherits parameters
 # from the given parent
 def mutate(pair):
@@ -32,21 +49,6 @@ class Genetic:
         self.settings = settings
         self.initial = initial
 
-    # takes in a population of candidates of size n. Randomly selects n cells
-    # weighted by their performance (distance travelled). Return this selection.
-    def selection(self, pop):
-        factors = [math.exp(self.s * cell.distance) for cell in pop]
-        weights = np.asarray(factors) / np.sum(factors)
-        indices = np.random.choice(pop.size, self.gen_size, p=weights)
-        return np.asarray([pop[i] for i in indices])
-
-    # Takes in a population of parents, create new cells that inherit parameters from parents
-    # with mutations included. 
-    def offspring(self, parents, pool):
-        children = np.asarray([sim.Cell(**self.settings) for _ in range(self.gen_size)], dtype = 'O')
-        new_pop = np.asarray(pool.map(mutate, zip(children, parents)))
-        return new_pop
-
     # advances the simulation by n epochs
     def parallel_gen_alg(self, n, pool):
         counter = 0
@@ -56,8 +58,8 @@ class Genetic:
             pop = np.asarray([sim.Cell(**self.settings) for _ in range(self.gen_size)], dtype = 'O')
             [cell.initialize(*self.initial) for cell in pop]
         else:
-            parents = self.selection(self.full_data[-1])
-            pop = self.offspring(parents, pool)
+            parents = selection(self.gen_size, self.s, self.full_data[-1])
+            pop = offspring(self.settings, self.gen_size, parents, pool)
         # initialize the population
         while(counter < n):
             start = time.time()
@@ -66,8 +68,8 @@ class Genetic:
             resized_pop = np.resize(pop,(1,self.gen_size))
             self.full_data = np.append(self.full_data, resized_pop, axis=0)
             # use nondimensional distance in exponent
-            parents = self.selection(pop)
-            new_pop = self.offspring(parents, pool)
+            parents = selection(self.gen_size, self.s, pop)
+            new_pop = offspring(self.settings, self.gen_size, parents, pool)
             pop = new_pop
             counter += 1
             self.completions += 1  
@@ -81,15 +83,20 @@ class Genetic:
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
 
+    def summary(self):
+        print("The configuraton of this run is: ")
+        print(self.settings)
+        print(self.initial)
+
     # returns a list of the number of numerical errors per generation
     def count_errors(self):
         count = 0
         errors = []
-        for gen in data.full_data:
+        for gen in self.full_data:
             for cell in gen:
                 if cell.ERROR is True:
                     count += 1
-            errors.append(count/data.gen_size)
+            errors.append(count/self.gen_size)
             count = 0
         return errors
 
