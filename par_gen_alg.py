@@ -56,7 +56,7 @@ class Genetic:
         if self.full_data is None:
             self.full_data = np.empty((0, self.gen_size))
             pop = np.asarray([sim.Cell(**self.settings) for _ in range(self.gen_size)], dtype = 'O')
-            [cell.initialize(*self.initial) for cell in pop]
+            [cell.initialize(self.initial) for cell in pop]
         else:
             parents = selection(self.gen_size, self.s, self.full_data[-1])
             pop = offspring(self.settings, self.gen_size, parents, pool)
