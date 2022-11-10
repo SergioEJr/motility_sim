@@ -18,7 +18,7 @@ def selection(gen_size, s, pop):
 # Takes in a population of parents, create new cells that inherit parameters from parents
 # with mutations included. 
 def offspring(settings, gen_size, parents, pool):
-    children = np.asarray([sim.Cell(**settings) for _ in range(gen_size)], dtype = 'O')
+    children = np.asarray([sim.Cell(settings) for _ in range(gen_size)], dtype = 'O')
     new_pop = np.asarray(pool.map(mutate, zip(children, parents)))
     return new_pop
 
@@ -46,6 +46,13 @@ class Genetic:
         self.completions = 0
         self.s = s
         self.full_data = None
+        # both of these are dictionaries
+        valid_init_keys = ('k1', 'k2', 'K', 'm_dens', 'm_cov', 'dir_prob', 'imp_sens')
+        valid_settings_keys = ('duration', 'FPS', 'beta', 'budget')
+        for key in initial:
+            assert key in valid_init_keys
+        for key in settings:
+            assert key in valid_settings_keys
         self.settings = settings
         self.initial = initial
 
@@ -55,7 +62,7 @@ class Genetic:
         # if no population, initialize
         if self.full_data is None:
             self.full_data = np.empty((0, self.gen_size))
-            pop = np.asarray([sim.Cell(**self.settings) for _ in range(self.gen_size)], dtype = 'O')
+            pop = np.asarray([sim.Cell(self.settings) for _ in range(self.gen_size)], dtype = 'O')
             [cell.initialize(self.initial) for cell in pop]
         else:
             parents = selection(self.gen_size, self.s, self.full_data[-1])

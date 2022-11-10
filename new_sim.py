@@ -54,12 +54,13 @@ class Motor():
         # so that motors don't collide with each other
         self.shape.filter = pymunk.ShapeFilter(group=1)
         self.shape.collision_type = ct
+        # choose the collision handler
         if coll_hand is None:
             self.switched = False
-            self.set_dir_method('velswitch')
-        else: 
-            self.set_dir_method(coll_hand)
             self.COV1 = COV
+            self.set_coll_handler('velswitch')
+        else: 
+            self.set_coll_handler(coll_hand)
         # separate handler that changes the direction of the applied force
         # if the direction of the velocity has changed,
         # change the dir of the force
@@ -114,7 +115,7 @@ class Motor():
                 # turn off noise to guarantee that the switch happens
                 self.COV = 0
     
-    def set_dir_method(self, option):
+    def set_coll_handler(self, option):
         if option == 'sigmoid':
             self.change_dir = self.change_dir_sigmoid
         elif option == 'velswitch':
@@ -185,24 +186,21 @@ class Cell:
     
     # global_args = (duration, frames per second, damping coeff, energy budget)
     # sim_args = (k1, k2, motor args)
-    def __init__(self, **kwargs):
+    def __init__(self, kwargs):
         np.random.seed()
         self.LENGTH = 1000
         self.WALL_SEP = 20
-        settings_keys = ('DURATION','FPS','BETA','BUDGET')
-        try:
-            for key in settings_keys:
-                assert(key in kwargs)
-                setattr(self, key, kwargs[key])
-        except:
-            raise
+        self.DURATION = kwargs['duration']
+        self.FPS = kwargs['FPS']
+        self.BETA = kwargs['beta']
+        self.BUDGET = kwargs['budget']
         self.TIME_STEP = 1/self.FPS
         self.ERROR = False
         
         self.distance = None
         self.motors = None
         
-    def initialize(self, **kwargs):
+    def initialize(self, kwargs):
         self.K1 = kwargs['k1']
         self.K2 = kwargs['k2']
         self.K = kwargs['K']
@@ -251,10 +249,12 @@ class Cell:
         out_wall1_pos = in_wall1_pos - self.WALL_SEP
         y_pos = 0
         spring_damp = 0
-        inner_wall1 = self.make_wall(in_wall1_pos, y_pos, 20, 5, 1)
-        inner_wall2 = self.make_wall(-in_wall1_pos, y_pos, 20, 5, 2)
-        outer_wall1 = self.make_wall(out_wall1_pos, y_pos, 40, 10, 3)
-        outer_wall2 = self.make_wall(-out_wall1_pos, y_pos, 40, 10, 4)   
+        wall_height = 20
+        wall_width = 5
+        inner_wall1 = self.make_wall(in_wall1_pos, y_pos, wall_height, wall_width, 1)
+        inner_wall2 = self.make_wall(-in_wall1_pos, y_pos, wall_height, wall_width, 2)
+        outer_wall1 = self.make_wall(out_wall1_pos, y_pos, 2*wall_height, 2*wall_width, 3)
+        outer_wall2 = self.make_wall(-out_wall1_pos, y_pos, 2*wall_height, 2*wall_width, 4)   
         self.make_spring(inner_wall1.body, outer_wall1.body,
                          self.WALL_SEP, self.K1, spring_damp)
         self.make_spring(inner_wall2.body, outer_wall2.body,
@@ -287,7 +287,6 @@ class Cell:
             elapsed_secs = frame/self.FPS
             frame += 1
             self.SPACE.step(self.TIME_STEP)
-        self.calculate()
 
     def detailed_run(self):
         elapsed_secs = 0
@@ -324,7 +323,6 @@ class Cell:
             elapsed_secs = frame/self.FPS
             frame += 1
             self.SPACE.step(self.TIME_STEP)
-        self.calculate()
         return inwall1_pos, inwall2_pos, mots_pos, mots_mom
 
 
@@ -370,5 +368,4 @@ class Cell:
             self.SPACE.step(self.TIME_STEP)
             pygame.display.update()
             clock.tick(self.FPS)
-        self.calculate()
         pygame.quit()
