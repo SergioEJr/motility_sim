@@ -186,31 +186,31 @@ class Cell:
     
     # global_args = (duration, frames per second, damping coeff, energy budget)
     # sim_args = (k1, k2, motor args)
-    def __init__(self, kwargs):
+    def __init__(self, settings_dict):
         np.random.seed()
         self.LENGTH = 1000
         self.WALL_SEP = 20
-        self.DURATION = kwargs['duration']
-        self.FPS = kwargs['FPS']
-        self.BETA = kwargs['beta']
-        self.BUDGET = kwargs['budget']
+        self.DURATION = settings_dict['duration']
+        self.FPS = settings_dict['FPS']
+        self.BETA = settings_dict['beta']
+        self.BUDGET = settings_dict['budget']
         self.TIME_STEP = 1/self.FPS
         self.ERROR = False
         
         self.distance = None
         self.motors = None
         
-    def initialize(self, kwargs):
-        self.K1 = kwargs['k1']
-        self.K2 = kwargs['k2']
-        self.K = kwargs['K']
-        n_motors = int(kwargs['m_dens']*self.LENGTH)
+    def initialize(self, initial_dict):
+        self.K1 = initial_dict['k1']
+        self.K2 = initial_dict['k2']
+        self.K = initial_dict['K']
+        n_motors = int(initial_dict['m_dens']*self.LENGTH)
         E_per_motor = self.BUDGET/n_motors
         # places the sigmoid center at the 
         term_impulse = 3.14*math.sqrt(2*E_per_motor/3.14)
         self.motors = np.asarray(
-            [self.make_motor(E_per_motor, kwargs['m_cov'], kwargs['dir_prob'],
-                             kwargs['imp_sens'], term_impulse, i) 
+            [self.make_motor(E_per_motor, initial_dict['m_cov'], initial_dict['dir_prob'],
+                             initial_dict['imp_sens'], term_impulse, i) 
                              for i in range(n_motors)], dtype='O')
     
     # where all mutations take place

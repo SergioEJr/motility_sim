@@ -49,6 +49,9 @@ class Genetic:
         # both of these are dictionaries
         valid_init_keys = ('k1', 'k2', 'K', 'm_dens', 'm_cov', 'dir_prob', 'imp_sens')
         valid_settings_keys = ('duration', 'FPS', 'beta', 'budget')
+        self.properties = ('dist', 'pol', 'avg_k', 'mot_dens', 'mot_E',
+                            'mot_cov', 'mot_dirp', 'mot_sens',
+                            'mot_cent', 'prop_errors')
         for key in initial:
             assert key in valid_init_keys
         for key in settings:
@@ -74,7 +77,7 @@ class Genetic:
             pop = np.asarray(pool.map(cell_run, pop))
             resized_pop = np.resize(pop,(1,self.gen_size))
             self.full_data = np.append(self.full_data, resized_pop, axis=0)
-            # use nondimensional distance in exponent
+            # create new population
             parents = selection(self.gen_size, self.s, pop)
             new_pop = offspring(self.settings, self.gen_size, parents, pool)
             pop = new_pop
@@ -94,37 +97,3 @@ class Genetic:
         print("The configuraton of this run is: ")
         print(self.settings)
         print(self.initial)
-
-    # returns a list of the number of numerical errors per generation
-    def count_errors(self):
-        count = 0
-        errors = []
-        for gen in self.full_data:
-            for cell in gen:
-                if cell.ERROR is True:
-                    count += 1
-            errors.append(count/self.gen_size)
-            count = 0
-        return errors
-
-    # returns a list of the mean of 'attribute' per generation
-    def mean_pgen(self, attribute):
-        means = []
-        count = 0
-        n_valid = 0
-        for gen in self.full_data:
-            for cell in gen:
-                if cell.ERROR is True:
-                    continue
-                else:
-                    n_valid += 1
-                    try:
-                        count += getattr(cell, attribute) 
-                    except:
-                        print(f"'{attribute}' not found, try one of the following")
-                        print(vars(cell))
-                        return -1
-            means.append(count/n_valid)
-            count = 0
-            n_valid = 0
-        return np.asarray(means)
